@@ -7,6 +7,7 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.EditText
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_startup.*
 
 class StartupActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
@@ -22,42 +23,47 @@ class StartupActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
         pSpinner.setAdapter(pAA)
         rSpinner.setAdapter(rAA)
 
-        var tempEditText = EditText(this)   // player name list
-        tempEditText.setHint(R.string.player.toString() + " 1")
-        playerList = mutableListOf(tempEditText)
-//        pSpinner.onItemSelectedListener = object: AdapterView.OnItemSelectedListener {
-//            override fun onItemSelected(
-//                parent: AdapterView<*>?,
-//                view: View?,
-//                position: Int,
-//                id: Long
-//            ) {
-//                var tempPlayerList = playerList
-//                while (tempPlayerList!!.size > players[position]) {   //add if needed
-//                    var temp = EditText(this@StartupActivity)
-//                    temp.setHint(R.string.player.toString() + " " + tempPlayerList.size)
-//                    tempPlayerList!!.add(temp)
-//                }
-//                while (tempPlayerList!!.size < players[position]) {   //remove if needed
-//                    tempPlayerList!!.removeAt(tempPlayerList.size - 1)
-//                }
-//                playerList = tempPlayerList     //update new list
-//                aa!!.notifyDataSetChanged()     //update view
-//            }
-//
-//            /**
-//             * Required abstract
-//             */
-//            override fun onNothingSelected(parent: AdapterView<*>?) {
-//            }
-//        }
-        aa = ArrayAdapter<EditText>(this, android.R.layout.simple_list_item_1, playerList!!)
-        playersListView.adapter = aa
+        editTexts = mutableListOf<EditText>()
+        pSpinner.onItemSelectedListener = object: AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                var tempEditTexts = editTexts   //local var to change and reassign
+                for (i in playerNames.childCount until players[position]) {   //add if needed
+                    var tempEditText = EditText(this@StartupActivity)
+                    tempEditText.hint = resources.getString(R.string.player)+ " " + (i + 1)
+                    playerNames.addView(tempEditText)
+                    tempEditTexts.add(tempEditText)
+//                    Toast.makeText(this@StartupActivity, " " + playerList.childCount + " " + players[position] + " " + i, Toast.LENGTH_SHORT).show()
+                }
+                for (i in (playerNames.childCount - 1) downTo players[position]) { //remove if needed
+                    playerNames.removeView(tempEditTexts.get(i))
+                    tempEditTexts.removeAt(i)
+                }
+                editTexts = tempEditTexts
+            }
+            /**
+             * Required abstract
+             */
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
+        }
 
         startButton.setOnClickListener {        //launch new activity
             val i = Intent(this, MainActivity::class.java)
             i.putExtra("p", pSpinner.getSelectedItem().toString().toInt())    //send info to new activity
             i.putExtra("r", rSpinner.getSelectedItem().toString().toInt())
+
+            val tempEditText = editTexts
+            var playerList = ArrayList<String>()
+            for (element in tempEditText) {
+                playerList.add(element.text.toString())
+            }
+            i.putStringArrayListExtra("pNames", playerList)
+
             startActivity(i)
         }
     }
@@ -74,6 +80,5 @@ class StartupActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
     override fun onNothingSelected(arg0: AdapterView<*>) {
     }
 
-    private var playerList: MutableList<EditText>? = null
-    private var aa: ArrayAdapter<EditText>? = null
+    private lateinit var editTexts: MutableList<EditText>
 }

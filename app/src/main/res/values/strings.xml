@@ -2,11 +2,16 @@
     <string name="app_name">Judgement</string>
     <string name="cards">Cards:</string>
     <string name="game">Game:</string>
+    <string name="hands">Hands</string>
     <string name="hands_left">HL:</string>
+    <string name="lose">Lose</string>
+    <string name="name">Name</string>
     <string name="next_round">Next Round</string>
     <string name="player">Player</string>
     <string name="players">Players:</string>
     <string name="round">RNDs:</string>
     <string name="rounds">Rounds:</string>
+    <string name="score">Score</string>
     <string name="start_game">Start Game</string>
+    <string name="win">Win</string>
 </resources>

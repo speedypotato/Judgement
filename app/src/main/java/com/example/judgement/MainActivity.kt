@@ -1,9 +1,12 @@
 package com.example.judgement
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.ImageView
+import android.view.Gravity
+import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.TextViewCompat
 import kotlinx.android.synthetic.main.activity_main.*
+
 
 class MainActivity : AppCompatActivity() {
     private val SUIT_IMAGE: Array<Int> = arrayOf(R.drawable.spade, R.drawable.diamond, R.drawable.club, R.drawable.heart, R.drawable.no_suit)
@@ -13,8 +16,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        var players = intent.getIntExtra("p", 1)
-        var rounds = intent.getIntExtra("r", 1)
+        val players = intent.getIntExtra("p", 1)    //grab info from intent
+        val rounds = intent.getIntExtra("r", 1)
+        val playerNames = intent.getStringArrayListExtra("pNames")
 
         gameNum = 1
         roundNum = 1
@@ -24,23 +28,95 @@ class MainActivity : AppCompatActivity() {
         SUIT_VIEW = arrayOf(imageView, imageView2, imageView3, imageView4, imageView5)
         suitIndex = 0
 
-        gameVal.setText(gameNum.toString())
-        roundVal.setText(roundNum.toString())
-        handsLeftVal.setText(handsLeftNum.toString())
-        cardsVal.setText(cardsNum.toString())
+        gameVal.text = gameNum.toString()
+        roundVal.text = roundNum.toString()
+        handsLeftVal.text = handsLeftNum.toString()
+        cardsVal.text = cardsNum.toString()
+
+        //labels
+        var labelTr = TableRow(this)
+        labelTr.layoutParams = TableRow.LayoutParams(
+            TableRow.LayoutParams.MATCH_PARENT,
+            TableRow.LayoutParams.WRAP_CONTENT
+        )
+
+        var tvNameLabel = TextView(this)
+        tvNameLabel.text = resources.getString(R.string.name)
+        TextViewCompat.setTextAppearance(tvNameLabel, android.R.style.TextAppearance_DeviceDefault_Medium)
+        tvNameLabel.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f)
+
+        var tvHandsLabel = TextView(this)
+        tvHandsLabel.text = resources.getString(R.string.hands)
+        TextViewCompat.setTextAppearance(tvHandsLabel, android.R.style.TextAppearance_DeviceDefault_Medium)
+        tvHandsLabel.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.4f)
+
+        var tvWinLoseLabel = TextView(this)
+        tvWinLoseLabel.text = resources.getString(R.string.lose) + "/" + resources.getString(R.string.win)
+        TextViewCompat.setTextAppearance(tvWinLoseLabel, android.R.style.TextAppearance_DeviceDefault_Medium)
+        tvWinLoseLabel.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f)
+
+        var tvScoreLabel = TextView(this)
+        tvScoreLabel.text = resources.getString(R.string.score)
+        TextViewCompat.setTextAppearance(tvScoreLabel, android.R.style.TextAppearance_DeviceDefault_Medium)
+        tvScoreLabel.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.4f)
+        tvScoreLabel.gravity = Gravity.RIGHT
+
+        labelTr.addView(tvNameLabel)
+        labelTr.addView(tvHandsLabel)
+        labelTr.addView(tvWinLoseLabel)
+        labelTr.addView(tvScoreLabel)
+        playerList.addView(labelTr)
+
+        for (name in playerNames) {     //add player list
+            var tr = TableRow(this)
+            tr.layoutParams = TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+            )
+
+            var tvName = TextView(this)
+            tvName.text = name
+            TextViewCompat.setTextAppearance(tvName, android.R.style.TextAppearance_Large)
+            tvName.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f)
+
+            var hands = Button(this)
+            hands.text = "0"
+            hands.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.4f)
+
+            var sw = Switch(this)
+            sw.textOn = resources.getString(R.string.win)
+            sw.textOff = resources.getString(R.string.lose)
+            sw.showText = true
+            sw.gravity = Gravity.LEFT
+            sw.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f)
+
+            var tvScore = TextView(this)
+            tvScore.text = "0"
+            TextViewCompat.setTextAppearance(tvScore, android.R.style.TextAppearance_Large)
+            tvScore.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.4f)
+            tvScore.gravity = Gravity.CENTER
+            //todo: set color
+
+            tr.addView(tvName)
+            tr.addView(hands)
+            tr.addView(sw)
+            tr.addView(tvScore)
+
+            playerList.addView(tr)
+        }
 
         nextRoundButton.setOnClickListener {
             var tempIdx = suitIndex     //declare local for multithreading workaround
-            tempIdx = (tempIdx!! + 1) % SUIT_IMAGE.size     //can be null, so !! to allow nullpointerexcep
+            tempIdx = (tempIdx + 1) % SUIT_IMAGE.size
             updateSuits(tempIdx)        //update as needed
             suitIndex = tempIdx         //update instance var
 
             var tempCardsNum = cardsNum     //update cards to hand out
-            tempCardsNum = tempCardsNum!! - 1
+            tempCardsNum = tempCardsNum - 1
             cardsVal.setText(tempCardsNum.toString())
             cardsNum = tempCardsNum
 
-            handsLeftVal.setText(tempCardsNum.toString())   //update available hands
+            handsLeftVal.text = tempCardsNum.toString()    //update available hands
             handsLeftNum = tempCardsNum
         }
     }
@@ -51,17 +127,17 @@ class MainActivity : AppCompatActivity() {
      */
     private fun updateSuits(idx: Int) {
         var tempIdx = idx
-        for (imageView in SUIT_VIEW!!) {  //set all to gray
+        for (imageView in SUIT_VIEW) {  //set all to gray
             imageView.setImageResource(SUIT_IMAGE_GRAY[tempIdx])
             tempIdx = (tempIdx + 1) % SUIT_IMAGE.size
         }
-        SUIT_VIEW!![0].setImageResource(SUIT_IMAGE[idx])  //set actual color for first
+        SUIT_VIEW[0].setImageResource(SUIT_IMAGE[idx])  //set actual color for first
     }
 
-    private var SUIT_VIEW: Array<ImageView>? = null
-    private var suitIndex: Int? = null
-    private var gameNum: Int? = null
-    private var roundNum: Int? = null
-    private var handsLeftNum: Int? = null
-    private var cardsNum: Int? = null
+    private lateinit var SUIT_VIEW: Array<ImageView>
+    private var suitIndex: Int = 0
+    private var gameNum: Int = 0
+    private var roundNum: Int = 0
+    private var handsLeftNum: Int = 0
+    private var cardsNum: Int = 0
 }
