@@ -53,7 +53,7 @@ class StartupActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
         }
 
         pSpinner.setSelection(3)    //default to 5 players
-        rSpinner.setSelection(13)   //default to 13 rounds
+        rSpinner.setSelection(12)   //default to 13 rounds
 
         startButton.setOnClickListener {        //launch new activity
             val i = Intent(this, MainActivity::class.java)

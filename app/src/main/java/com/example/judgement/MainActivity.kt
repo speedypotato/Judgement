@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
         var tvWinLoseLabel = TextView(this)
         tvWinLoseLabel.text = resources.getString(R.string.lose) + "/" + resources.getString(R.string.win)
         TextViewCompat.setTextAppearance(tvWinLoseLabel, android.R.style.TextAppearance_DeviceDefault_Medium)
-        tvWinLoseLabel.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f)
+        tvWinLoseLabel.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.55f)
 
         var tvScoreLabel = TextView(this)
         tvScoreLabel.text = resources.getString(R.string.score)
@@ -133,7 +133,7 @@ class MainActivity : AppCompatActivity() {
             sw.textOff = resources.getString(R.string.lose)
             sw.showText = true
             sw.gravity = Gravity.LEFT
-            sw.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f)
+            sw.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.55f)
 
             var tvScore = TextView(this)
             tvScore.text = "0"
@@ -243,6 +243,17 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onBackPressed() {  //confirm back button exit
+        AlertDialog.Builder(this)
+            .setTitle("Closing Game")
+            .setMessage("Are you sure you want to return to the start page?")
+            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialog, id ->
+                finish();
+            })
+            .setNegativeButton("No", null)
+            .show()
     }
 
     /**
