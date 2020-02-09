@@ -1,9 +1,12 @@
 package com.example.judgement
 
+import android.content.DialogInterface
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.widget.TextViewCompat
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -21,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         val playerNames = intent.getStringArrayListExtra("pNames")
 
         gameNum = 1
-        roundNum = 1
+        roundNum = rounds
         handsLeftNum = rounds
         cardsNum = rounds
 
@@ -31,6 +34,7 @@ class MainActivity : AppCompatActivity() {
         gameVal.text = gameNum.toString()
         roundVal.text = roundNum.toString()
         handsLeftVal.text = handsLeftNum.toString()
+        handsLeftVal.setTextColor(ContextCompat.getColor(this, R.color.colorLightGreen))
         cardsVal.text = cardsNum.toString()
 
         //labels
@@ -67,6 +71,10 @@ class MainActivity : AppCompatActivity() {
         labelTr.addView(tvScoreLabel)
         playerList.addView(labelTr)
 
+        handsButtons = mutableListOf()
+        winSwitches = mutableListOf()
+        scoreViews = mutableListOf()
+
         for (name in playerNames) {     //add player list
             var tr = TableRow(this)
             tr.layoutParams = TableRow.LayoutParams(
@@ -82,6 +90,43 @@ class MainActivity : AppCompatActivity() {
             var hands = Button(this)
             hands.text = "0"
             hands.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.4f)
+            hands.setOnClickListener {  //increment hand bet
+                var nextHand = (Integer.parseInt(hands.text.toString()) + 1) % (cardsNum + 1)
+                hands.text = nextHand.toString()
+
+                var tempHandsLeft = Integer.parseInt(handsLeftVal.text.toString()) - 1
+                if (hands.text.toString() == ("0")) {
+                    tempHandsLeft += cardsNum + 1
+                }
+                handsLeftVal.text = tempHandsLeft.toString()
+                if (tempHandsLeft > 0) {    //update color
+                    handsLeftVal.setTextColor(ContextCompat.getColor(this, R.color.colorLightGreen))
+                } else if (tempHandsLeft == 0) {
+                    handsLeftVal.setTextColor(ContextCompat.getColor(this, R.color.colorMustard))
+                } else {
+                    handsLeftVal.setTextColor(ContextCompat.getColor(this, R.color.colorAccent))
+                }
+            }
+            hands.setOnLongClickListener {  //decrement hand bet with long hold
+                var prevHand = Integer.parseInt(hands.text.toString()) - 1
+                if (prevHand < 0)
+                    prevHand = cardsNum
+                hands.text = prevHand.toString()
+
+                var tempHandsLeft = Integer.parseInt(handsLeftVal.text.toString()) + 1
+                if (hands.text.toString() == cardsNum.toString()) {
+                    tempHandsLeft -= (cardsNum + 1)
+                }
+                handsLeftVal.text = tempHandsLeft.toString()
+                if (tempHandsLeft > 0) {    //update color
+                    handsLeftVal.setTextColor(ContextCompat.getColor(this, R.color.colorLightGreen))
+                } else if (tempHandsLeft == 0) {
+                    handsLeftVal.setTextColor(ContextCompat.getColor(this, R.color.colorMustard))
+                } else {
+                    handsLeftVal.setTextColor(ContextCompat.getColor(this, R.color.colorAccent))
+                }
+                return@setOnLongClickListener true
+            }
 
             var sw = Switch(this)
             sw.textOn = resources.getString(R.string.win)
@@ -102,22 +147,101 @@ class MainActivity : AppCompatActivity() {
             tr.addView(sw)
             tr.addView(tvScore)
 
+            handsButtons.add(hands)
+            winSwitches.add(sw)
+            scoreViews.add(tvScore)
+
             playerList.addView(tr)
         }
 
         nextRoundButton.setOnClickListener {
-            var tempIdx = suitIndex     //declare local for multithreading workaround
-            tempIdx = (tempIdx + 1) % SUIT_IMAGE.size
-            updateSuits(tempIdx)        //update as needed
-            suitIndex = tempIdx         //update instance var
+            if (cardsNum == 0) {    //game has already ended, return to startup screen
+                finish()
+            } else if (handsLeftVal.text.toString().toInt() == 0) {
+                AlertDialog.Builder(this)
+                    .setTitle("Invalid Bets")
+                    .setMessage("Last player must make at least 1 more or less bet.")
+                    .setPositiveButton("Ok", null)
+                    .show()
+            } else {
+                for (i in 0 until handsButtons.size) {  //add to score, update score color
+                    if (winSwitches[i].isChecked) {
+                        scoreViews[i].text =
+                            (scoreViews[i].text.toString().toInt() + handsButtons[i].text.toString().toInt() + 1).toString()
+                        scoreViews[i].setTextColor(
+                            ContextCompat.getColor(
+                                this@MainActivity,
+                                R.color.colorLightGreen
+                            )
+                        )
+                    } else {
+                        scoreViews[i].setTextColor(
+                            ContextCompat.getColor(
+                                this@MainActivity,
+                                R.color.colorAccent
+                            )
+                        )
+                    }
 
-            var tempCardsNum = cardsNum     //update cards to hand out
-            tempCardsNum = tempCardsNum - 1
-            cardsVal.setText(tempCardsNum.toString())
-            cardsNum = tempCardsNum
+                    //reset
+                    handsButtons[i].text = "0"
+                    winSwitches[i].isChecked = false
+                }
 
-            handsLeftVal.text = tempCardsNum.toString()    //update available hands
-            handsLeftNum = tempCardsNum
+                suitIndex = (suitIndex + 1) % SUIT_IMAGE.size         //update instance var
+                updateSuits(suitIndex)        //update as needed
+
+                cardsNum -= 1       //update cards to hand out
+                cardsVal.text = cardsNum.toString()
+
+                handsLeftVal.text = cardsNum.toString()    //update available hands
+                handsLeftNum = cardsNum
+                handsLeftVal.setTextColor(ContextCompat.getColor(this, R.color.colorLightGreen))
+
+                if (cardsNum == 0) {    //end of game
+                    var max = -1
+                    var idx = -1
+                    for ((index, elem) in scoreViews.withIndex()) {
+                        if (elem.text.toString().toInt() > max) {
+                            max = elem.text.toString().toInt()
+                            idx = index
+                        }
+                    }
+                    AlertDialog.Builder(this)
+                        .setTitle("Game Finished")
+                        .setMessage(playerNames[idx] + " won with " + max + " points!")
+                        .setPositiveButton( //reset and increment game num
+                            "Continue Game",
+                            DialogInterface.OnClickListener { dialog, id ->
+                                gameNum += 1
+                                roundNum = rounds
+                                handsLeftNum = rounds
+                                cardsNum = rounds
+                                gameVal.text = gameNum.toString()
+                                roundVal.text = roundNum.toString()
+                                handsLeftVal.text = handsLeftNum.toString()
+                                handsLeftVal.setTextColor(ContextCompat.getColor(this, R.color.colorLightGreen))
+                                cardsVal.text = cardsNum.toString()
+                                suitIndex = 0         //update instance var
+                                updateSuits(suitIndex)        //update as needed
+                                for (i in 0 until handsButtons.size) {
+                                    handsButtons[i].text = "0"
+                                    winSwitches[i].isChecked = false
+                                    scoreViews[i].text = "0"
+                                    scoreViews[i].setTextColor(ContextCompat.getColor(
+                                        this@MainActivity,
+                                        android.R.color.black
+                                    ))
+                                }
+                            })
+                        .setNegativeButton( //return to score screen
+                            "End",
+                            DialogInterface.OnClickListener { dialog, id ->
+                                nextRoundButton.text = resources.getText(R.string.return_home)
+                        })
+                        .show()
+                }
+            }
         }
     }
 
@@ -140,4 +264,7 @@ class MainActivity : AppCompatActivity() {
     private var roundNum: Int = 0
     private var handsLeftNum: Int = 0
     private var cardsNum: Int = 0
+    private lateinit var handsButtons: MutableList<Button>
+    private lateinit var winSwitches: MutableList<Switch>
+    private lateinit var scoreViews: MutableList<TextView>
 }
